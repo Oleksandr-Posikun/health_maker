@@ -16,7 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from Telegram_bot_backend import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('user_id/<telegram_id>', views.PersonalDataUserId.as_view()),
 ]
+
