@@ -5,6 +5,8 @@
 db.sqlite3
 /media
 /.idea
+experiment.py
+exp.py
 
 # User-specific stuff
 .idea/**/workspace.xml

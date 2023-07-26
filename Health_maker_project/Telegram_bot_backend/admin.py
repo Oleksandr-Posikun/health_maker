@@ -1,5 +1,5 @@
 from django.contrib import admin
-from . import models
+from .models import UsersRunningTrainingData, UserPersonalData
 
 
 class UserPersonalDataAdmin(admin.ModelAdmin):
@@ -8,4 +8,15 @@ class UserPersonalDataAdmin(admin.ModelAdmin):
     list_display_links = ['telegram_id']
 
 
-admin.site.register(models.UserPersonalData, UserPersonalDataAdmin)
+admin.site.register(UserPersonalData, UserPersonalDataAdmin)
+
+
+class UsersRunningTrainingDataAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user_id', 'start_time', 'finish_time', 'running_time', 'route_length')
+    list_filter = ('user_id', 'start_time', 'finish_time')
+    search_fields = ('user_id__username', 'route_coordinates')
+
+
+
+admin.site.register(UsersRunningTrainingData, UsersRunningTrainingDataAdmin)
+
