@@ -1,3 +1,4 @@
+import datetime
 import aiohttp
 
 
@@ -20,7 +21,7 @@ class HttpsRequestsServer:
                 else:
                     return response
 
-    async def _post_request(self, *args, json: bool = True, text: bool = True, **kwargs):
+    async def _post_request(self, *args, json: bool = False, text: bool = False, **kwargs):
         async with aiohttp.ClientSession() as session:
             url = f'{self.url_server}'
             headers = {}
@@ -35,20 +36,29 @@ class HttpsRequestsServer:
             async with session.post(url, headers=headers) as response:
                 if json:
                     return await response.json()
-                elif text:
+
+                if text:
                     return await response.text()
-                else:
-                    return response
+
+                return response
 
     async def get_user_info(self, token, telegram_id, user_name, user_first_name):
         response = await self._get_request(token, telegram_id, user_name, user_first_name)
 
         return response
 
-    async def post_running_training_data(self, token, telegram_id, coordinates):
-        response = await self._post_request('running_workouts', User_Agent='TelegramBot',
-                                            Authorization=token,
-                                            user=telegram_id,
-                                            user_position=coordinates)
+    async def post_running_training_data(self, url, token, telegram_id, coordinates, time=False, ):
+        if time:
+            response = await self._post_request(url, User_Agent='TelegramBot',
+                                                Authorization=token,
+                                                user=telegram_id,
+                                                user_position=coordinates,
+                                                time=datetime.datetime.now())
+        else:
+            response = await self._post_request(url, User_Agent='TelegramBot',
+                                                Authorization=token,
+                                                user=telegram_id,
+                                                user_position=coordinates)
 
-        return response
+        return response.status
+

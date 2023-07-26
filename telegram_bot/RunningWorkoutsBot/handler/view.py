@@ -15,8 +15,6 @@ class RunningWorkouts:
         self.dp = main_dp
         self.fsm_running = RunningState()
         self.keyboard = KeyboardsMaker()
-        self.security_https = httpsRequestSecurity()
-        self.server_request = HttpsRequestsServer()
         self.location_processing = LocationProcessing()
 
     def register_handlers(self):
@@ -30,27 +28,17 @@ class RunningWorkouts:
                                                 state=self.fsm_running.finish_run)
 
     async def start_handle_location(self, message: types.Message):
-        telegram_id = str(message.from_user.id)
+        await self.location_processing.request_coordinates(message, 'start_running_workouts')
 
-        coordinates = await self.location_processing.get_coordinates(message)
-        coordinates = str(coordinates).replace(', ', '!&').replace('[', '').replace(']', '')
-
-        token = self.security_https.generate_token(telegram_id, coordinates)
-        result = await self.server_request.post_running_training_data(token, telegram_id, coordinates)
         inline_keyboard = await self.keyboard.create_inline_button({'text': 'Фініш', 'callback_data': 'finish'})
 
         await message.answer('Натисни "Фініш" коли закінчиш пробіжку:', reply_markup=inline_keyboard)
-        await message.answer(result)
 
         await self.fsm_running.moving.set()
 
     async def moving_handle_location(self, message: types.Message):
-        await self.location_processing.get_coordinates(message)
-
-        await self.location_processing.sums_steps()
-        self.steps_list.pop(0)
-
-        await self.fsm_running.finish_run.set()
+        await self.location_processing.request_coordinates(message, 'running_workouts_lasts')
+        # await self.fsm_running.finish_run.set()
 
     async def finish_handle_location(self, callback_query: types.CallbackQuery):
         self.time_list.append(datetime.now())

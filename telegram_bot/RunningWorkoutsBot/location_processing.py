@@ -3,9 +3,15 @@ import folium
 from geopy.distance import geodesic
 from datetime import datetime
 
+from __health_maker_bot.https_request_security import httpsRequestSecurity
+from __health_maker_bot.https_requests import HttpsRequestsServer
+
 
 class LocationProcessing:
     def __init__(self):
+        self.security_https = httpsRequestSecurity()
+        self.server_request = HttpsRequestsServer()
+
         self.steps_list = []
         self.all_steps_list = []
         self.time_list = []
@@ -17,6 +23,18 @@ class LocationProcessing:
 
         return [latitude, longitude]
 
+    async def request_coordinates(self, message, url):
+        telegram_id = str(message.from_user.id)
+        coordinates = await self.get_coordinates(message)
+        coordinates = str(coordinates).replace(', ', '!&').replace('[', '').replace(']', '')
+
+        token = self.security_https.generate_token(telegram_id, coordinates)
+        result = await self.server_request.post_running_training_data(url,
+                                                                      token,
+                                                                      telegram_id,
+                                                                      coordinates)
+
+        return result
 
     async def sums_steps(self):
         lat1, lon1 = self.steps_list[0]
