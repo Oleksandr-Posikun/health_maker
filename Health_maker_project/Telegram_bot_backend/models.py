@@ -8,9 +8,29 @@ class UserPersonalData(models.Model):
     user_first_name = models.CharField(max_length=50, null=False)
     user_name = models.CharField(max_length=50, null=True)
     user_status = models.CharField(max_length=6, null=False, default='user')
-    user_active = models.BooleanField(default=False)
+    user_active = models.BooleanField(default=True)
     data_time_create = models.DateTimeField(auto_now_add=True)
     data_time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Telegram ID: {self.telegram_id}, First Name: {self.user_first_name}, Active: {self.user_active}"
+        return f"Users personal information's: {self.telegram_id}, First Name: {self.user_first_name}, Active: {self.user_active}"
+
+
+def user_route_map_upload_path(instance, filename):
+    return f'_all_file/user_file/route_maps/{instance.start_time.strftime("%Y/%m/%d")}/{instance.user_id.id}/{instance.start_time.strftime("%H_%M_%S")}_{filename}'
+
+
+class UsersRunningTrainingData(models.Model):
+    user = models.ForeignKey(UserPersonalData, on_delete=models.CASCADE)
+    start_time = models.DateTimeField(auto_now_add=True)
+    finish_time = models.DateTimeField(null=True, blank=True)
+    running_time = models.DurationField(null=True, blank=True)
+    route_coordinates = models.JSONField(null=True, blank=True)
+    route_length = models.FloatField(null=True, blank=True)
+    route_map = models.FileField(upload_to=user_route_map_upload_path,
+                                 null=True, blank=True)
+
+    def __str__(self):
+        return f"Users running training: {self.user_id} {self.running_time} {self.route_length}"
+
+
