@@ -25,7 +25,7 @@ class RunningWorkouts:
                                                 content_types=types.ContentType.LOCATION,
                                                 state=self.fsm_running.moving)
         self.dp.register_callback_query_handler(self.finish_handle_location, text=['finish'],
-                                                state=self.fsm_running.finish_run)
+                                                state=self.fsm_running.moving)
 
     async def start_handle_location(self, message: types.Message):
         await self.location_processing.request_coordinates(message, 'start_running_workouts')
@@ -38,7 +38,6 @@ class RunningWorkouts:
 
     async def moving_handle_location(self, message: types.Message):
         await self.location_processing.request_coordinates(message, 'running_workouts_lasts')
-        # await self.fsm_running.finish_run.set()
 
     async def finish_handle_location(self, callback_query: types.CallbackQuery):
         self.time_list.append(datetime.now())

@@ -1,7 +1,6 @@
 import folium
 
 from geopy.distance import geodesic
-from datetime import datetime
 
 from __health_maker_bot.https_request_security import httpsRequestSecurity
 from __health_maker_bot.https_requests import HttpsRequestsServer

@@ -1,8 +1,8 @@
-import asyncio
-
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import WebAppInfo
+from aiogram.utils.exceptions import MessageToDeleteNotFound
+
 from MainMenuBot.FSM_obj import MainMenuState
 from MainMenuBot.keyboards_maker import KeyboardsMaker
 from RunningWorkoutsBot.FSM_obj import RunningState
@@ -34,6 +34,7 @@ class MainMenu:
         self.dp.register_callback_query_handler(self.choice_menu, lambda c: c.data, state=self.fsm_menu.main_menu)
 
     async def start(self, message: types.Message, state: FSMContext = None):
+        await self.clear_chat_memory(message)
         main_menu = await self.keyboard.create_reply_button('help', 'start')
         user_state = await state.get_state()
 
@@ -80,3 +81,10 @@ class MainMenu:
                                                      show_alert=True)
 
                 await i['fsm'].set()
+
+    async def clear_chat_memory(self, message):
+        for i in range(message.message_id - message.message_id, message.message_id):
+            try:
+                await self.bot.delete_message(message.chat.id, message.message_id - i)
+            except MessageToDeleteNotFound:
+                break
