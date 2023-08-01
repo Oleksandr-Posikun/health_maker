@@ -47,18 +47,22 @@ class HttpsRequestsServer:
 
         return response
 
-    async def post_running_training_data(self, url, token, telegram_id, coordinates, time=False, ):
-        if time:
-            response = await self._post_request(url, User_Agent='TelegramBot',
-                                                Authorization=token,
-                                                user=telegram_id,
-                                                user_position=coordinates,
-                                                time=datetime.datetime.now())
-        else:
-            response = await self._post_request(url, User_Agent='TelegramBot',
-                                                Authorization=token,
-                                                user=telegram_id,
-                                                user_position=coordinates)
+    async def post_running_training_data(self, url, token, telegram_id, coordinates):
+        response = await self._post_request(url, User_Agent='TelegramBot',
+                                            Authorization=token,
+                                            user=telegram_id,
+                                            user_position=coordinates,
+                                            )
 
         return response.status
+
+    async def post_running_finish_training_data(self, url, token, telegram_id, finish_time):
+        response = await self._post_request(url,
+                                            User_Agent='TelegramBot',
+                                            Authorization=token,
+                                            user=telegram_id,
+                                            finish_time=finish_time,
+                                            json=True)
+
+        return response
 
