@@ -1,15 +1,13 @@
-import folium
+import datetime
 
-from geopy.distance import geodesic
-from datetime import datetime
+from __health_maker_bot.https_request_security import httpsRequestSecurity
+from __health_maker_bot.https_requests import HttpsRequestsServer
 
 
 class LocationProcessing:
     def __init__(self):
-        self.steps_list = []
-        self.all_steps_list = []
-        self.time_list = []
-        self.whole_route_list = []
+        self.security_https = httpsRequestSecurity()
+        self.server_request = HttpsRequestsServer()
 
     async def get_coordinates(self, message):
         longitude = message.location.longitude
@@ -17,31 +15,28 @@ class LocationProcessing:
 
         return [latitude, longitude]
 
+    async def request_coordinates(self, message, url):
+        telegram_id = str(message.from_user.id)
+        coordinates = await self.get_coordinates(message)
+        coordinates = str(coordinates).replace(', ', '!&').replace('[', '').replace(']', '')
 
-    async def sums_steps(self):
-        lat1, lon1 = self.steps_list[0]
-        lat2, lon2 = self.steps_list[1]
+        token = self.security_https.generate_token(telegram_id, coordinates)
+        result = await self.server_request.post_running_training_data(url,
+                                                                      token,
+                                                                      telegram_id,
+                                                                      coordinates)
 
-        point1 = (lat1, lon1)
-        point2 = (lat2, lon2)
+        return result
 
-        distance = geodesic(point1, point2).meters
+    async def requests_finish_location(self, callback, url):
+        telegram_id = str(callback.message.chat.id)
+        user_ft = str(datetime.datetime.now())
 
-        self.whole_route_list.append(distance)
+        token = self.security_https.generate_token(telegram_id, user_ft)
+        result = await self.server_request.post_running_finish_training_data(url,
+                                                                             token,
+                                                                             telegram_id,
+                                                                             user_ft)
 
-    async def get_interval_time(self):
-        current_time = self.time_list[-1] - self.time_list[0]
-        total_seconds = int(current_time.total_seconds())
-        time = {'hours': total_seconds // 3600, 'minutes': (total_seconds % 3600) // 60, 'seconds': total_seconds % 60}
+        return result
 
-        return time
-
-    async def create_map(self):
-        m = folium.Map(location=[self.all_steps_list[0][1], self.all_steps_list[0][0]], zoom_start=15)
-        folium.PolyLine(
-            locations=[[coord[1], coord[0]] for coord in self.all_steps_list],
-            color='blue',
-            weight=5
-        ).add_to(m)
-
-        m.save('route_map.html')
