@@ -1,12 +1,6 @@
-import re
+# === Interface Segregation ===
 
-from Telegram_bot_backend.interface import CoordinateParserInterface
-
-
-class LocationProcessor(CoordinateParserInterface):
-    def __init__(self, model):
-        self.model = model
-
+class CoordinateParserInterface:
     def parse_coordinate(self, coordinate: str) -> list:
         """
         Parses the coordinate string and returns a list of floating-point numbers.
@@ -16,8 +10,18 @@ class LocationProcessor(CoordinateParserInterface):
         :return: A list of floating-point numbers representing the parsed coordinates.
         :rtype: list
         """
-        pattern = r'\d+\.\d+'
-        matches = re.findall(pattern, coordinate)
-        numbers = [float(match) for match in matches]
+        pass
 
-        return numbers
+
+class RunningWorkoutResultsInterface:
+    def get_run_time(self):
+        pass
+
+    def get_distance(self):
+        pass
+
+    def get_map(self):
+        pass
+
+    def get_speed(self):
+        pass
