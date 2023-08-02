@@ -46,8 +46,6 @@ class MainMenu:
                                                           telegram_id,
                                                           user_name)
 
-        print(result)
-
         if result['data_state']['state'] == 'newbie':
             inline = await self.keyboard.create_inline_button({'text': 'Так', 'callback_data': 'yes'},
                                                               {'text': 'Ні', 'callback_data': 'no'},
@@ -77,8 +75,7 @@ class MainMenu:
         await self.fsm_menu.main_menu.set()
         # markup = types.ReplyKeyboardMarkup()
         # markup.add(types.KeyboardButton('open',
-        #                                 web_app=WebAppInfo(url='https://github.com/btholt/four-semesters-of-cs/blob'
-        #                                                        '/fa61de3cc80e0030bb172ecd75c7cb4ca3aeeadf/index.html')))
+        #                                 web_app=WebAppInfo(url='')))
         await self.bot.send_message(chat_id=message.from_user.id, text="Цей розділ поки ще в розробці")
 
     async def choice_menu(self, callback: types.CallbackQuery):
