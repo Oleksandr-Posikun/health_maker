@@ -1,6 +1,8 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import WebAppInfo
+from aiogram.utils.exceptions import MessageToDeleteNotFound
+
 from MainMenuBot.FSM_obj import MainMenuState
 from MainMenuBot.keyboards_maker import KeyboardsMaker
 from RunningWorkoutsBot.FSM_obj import RunningState
@@ -38,7 +40,7 @@ class MainMenu:
         user_name = str(message.from_user.username)
         user_first_name = str(message.from_user.first_name)
         token = self.security_https.generate_token(telegram_id, user_name, user_first_name)
-
+        
         result = await self.server_request.get_user_info(token, telegram_id, user_name, user_first_name)
 
         if result['data_state']['state'] == 'newbie':
@@ -82,3 +84,10 @@ class MainMenu:
                                                      show_alert=True)
 
                 await i['fsm'].set()
+
+    async def clear_chat_memory(self, message):
+        for i in range(message.message_id - message.message_id, message.message_id):
+            try:
+                await self.bot.delete_message(message.chat.id, message.message_id - i)
+            except MessageToDeleteNotFound:
+                break

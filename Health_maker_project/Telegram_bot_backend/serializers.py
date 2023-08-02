@@ -8,8 +8,7 @@ class PersonalDataSerializer(serializers.ModelSerializer):
         fields = ['pk', 'telegram_id']
 
 
-class ResponseSerializer(serializers.Serializer):
-
+class RunningTrainingSerializer(serializers.ModelSerializer):
     class Meta:
         model = UsersRunningTrainingData
-        fields = ['pk', 'user_id']
+        fields = ['pk']

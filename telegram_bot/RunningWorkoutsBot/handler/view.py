@@ -5,8 +5,6 @@ from MainMenuBot.FSM_obj import MainMenuState
 from MainMenuBot.keyboards_maker import KeyboardsMaker
 from RunningWorkoutsBot.FSM_obj import RunningState
 from RunningWorkoutsBot.location_processing import LocationProcessing
-from __health_maker_bot.https_request_security import httpsRequestSecurity
-from __health_maker_bot.https_requests import HttpsRequestsServer
 
 
 class RunningWorkouts:
@@ -15,8 +13,6 @@ class RunningWorkouts:
         self.dp = main_dp
         self.fsm_running = RunningState()
         self.keyboard = KeyboardsMaker()
-        self.security_https = httpsRequestSecurity()
-        self.server_request = HttpsRequestsServer()
         self.location_processing = LocationProcessing()
 
     def register_handlers(self):
@@ -27,42 +23,33 @@ class RunningWorkouts:
                                                 content_types=types.ContentType.LOCATION,
                                                 state=self.fsm_running.moving)
         self.dp.register_callback_query_handler(self.finish_handle_location, text=['finish'],
-                                                state=self.fsm_running.finish_run)
+                                                state=self.fsm_running.moving)
 
     async def start_handle_location(self, message: types.Message):
-        telegram_id = str(message.from_user.id)
+        await self.location_processing.request_coordinates(message, 'start_running_workouts')
 
-        coordinates = await self.location_processing.get_coordinates(message)
-        coordinates = str(coordinates).replace(', ', '!&').replace('[', '').replace(']', '')
-
-        token = self.security_https.generate_token(telegram_id, coordinates)
-        result = await self.server_request.post_running_training_data(token, telegram_id, coordinates)
         inline_keyboard = await self.keyboard.create_inline_button({'text': 'Фініш', 'callback_data': 'finish'})
 
         await message.answer('Натисни "Фініш" коли закінчиш пробіжку:', reply_markup=inline_keyboard)
-        await message.answer(result)
 
         await self.fsm_running.moving.set()
 
     async def moving_handle_location(self, message: types.Message):
-        await self.location_processing.get_coordinates(message)
-
-        await self.location_processing.sums_steps()
-        self.steps_list.pop(0)
-
-        await self.fsm_running.finish_run.set()
+        await self.location_processing.request_coordinates(message, 'running_workouts_lasts')
 
     async def finish_handle_location(self, callback_query: types.CallbackQuery):
-        self.time_list.append(datetime.now())
-        time = await self.location_processing.get_interval_time()
-        await self.bot.answer_callback_query(callback_query.id,
-                                             text='Не забудьте вимкнути трансляцію!',
-                                             show_alert=True)
+        result = await self.location_processing.requests_finish_location(callback_query, 'running_workouts_finish')
+        time_seconds = float(result['time'])
+
+        hours = int(time_seconds // 3600)
+        minutes = int((time_seconds % 3600) // 60)
+        seconds = int(time_seconds % 60)
+        milliseconds = int((time_seconds % 1) * 1000)
 
         await self.bot.send_message(callback_query.message.chat.id,
-                                    f"Вы прошли {round(sum(self.route_list), 2)} м "
-                                    f"за {time['hours']:02d}:{time['minutes']:02d}:{time['seconds']:02d}")
-        await self.location_processing.create_map()
+                                    f"Відстань : {round(result['distance'], 2)} м \n"
+                                    f"Час {hours:02}:{minutes:02}:{seconds:02}:{milliseconds:03} \n"
+                                    f"Ваша швидкість {round(result['speed']['speed'], 2)} м/с ->"
+                                    f"{round(result['speed']['converted speed'], 2)} км/г")
 
         await MainMenuState.main_menu.set()
-

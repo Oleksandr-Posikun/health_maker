@@ -17,7 +17,11 @@ class UserPersonalData(models.Model):
 
 
 def user_route_map_upload_path(instance, filename):
-    return f'_all_file/user_file/route_maps/{instance.start_time.strftime("%Y/%m/%d")}/{instance.user_id.id}/{instance.start_time.strftime("%H_%M_%S")}_{filename}'
+    return f'_all_file/user_file/route_maps/' \
+           f'{instance.start_time.strftime("%Y")}/' \
+           f'{instance.start_time.strftime("%m")}/' \
+           f'{instance.start_time.strftime("%d")}/' \
+           f'{instance.user.id}/{instance.start_time.strftime("%H_%M_%S")}_map.html'
 
 
 class UsersRunningTrainingData(models.Model):
@@ -27,6 +31,7 @@ class UsersRunningTrainingData(models.Model):
     running_time = models.DurationField(null=True, blank=True)
     route_coordinates = models.JSONField(null=True, blank=True)
     route_length = models.FloatField(null=True, blank=True)
+    user_speed = models.FloatField(null=True, blank=True)
     route_map = models.FileField(upload_to=user_route_map_upload_path,
                                  null=True, blank=True)
 
