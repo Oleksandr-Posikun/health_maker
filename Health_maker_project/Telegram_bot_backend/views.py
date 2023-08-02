@@ -1,7 +1,7 @@
 import datetime
 
 import pytz
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.views import APIView
@@ -18,24 +18,28 @@ from .serializers import PersonalDataSerializer
 class PersonalDataUserId(APIView):
     security = httpsServerRequestSecurity()
 
-    def get(self, request, token, telegram_id, user_name, user_first_name, format=None):
+    @csrf_exempt
+    def post(self, request, format=None):
         user_state = {'state': 'experienced'}
+        if self.security.verify_token(request.headers['Authorization'],
+                                      request.headers['user'],
+                                      request.headers['user-name']):
+            if request.method == 'POST':
+                user_data = models.UserPersonalData.objects.filter(telegram_id=request.headers['user']).first()
+                if not user_data:
+                    new_entry = models.UserPersonalData(telegram_id=request.headers['user'],
+                                                        user_name=request.headers['user-name'],
+                                                        user_first_name=request.headers['user_first_name'])
+                    new_entry.save()
+                    user_state['state'] = 'newbie'
 
-        if self.security.verify_token(token, telegram_id, user_name, user_first_name):
-            user_data = models.UserPersonalData.objects.filter(telegram_id=telegram_id).first()
+                user_personal_information = PersonalDataSerializer(user_data, many=False)
 
-            if not user_data:
-                new_entry = models.UserPersonalData(telegram_id=telegram_id,
-                                                    user_name=user_name,
-                                                    user_first_name=user_first_name)
-                new_entry.save()
-                user_state['state'] = 'newbie'
-
-            user_personal_information = PersonalDataSerializer(user_data, many=False)
-
-            return Response({'data': user_personal_information.data, 'data_state': user_state})
+                return Response({'data': user_personal_information.data, 'data_state': user_state})
+            else:
+                return HttpResponseBadRequest()
         else:
-            return HttpResponseBadRequest()
+            return HttpResponseForbidden()
 
 
 class StartRunningWorkouts(APIView):
@@ -55,8 +59,10 @@ class StartRunningWorkouts(APIView):
                 self.data_saver.save_data_in_model(user_id=user_data.id, route_coordinates=[coordinates])
 
                 return Response(status=status.HTTP_200_OK)
+            else:
+                return HttpResponseBadRequest()
         else:
-            return Response({'data': 'error'})
+            return HttpResponseForbidden()
 
 
 class RunningWorkoutLasts(APIView):
@@ -84,7 +90,7 @@ class RunningWorkoutLasts(APIView):
             else:
                 return HttpResponseBadRequest()
         else:
-            return HttpResponseBadRequest()
+            return HttpResponseForbidden()
 
 
 class RunningWorkoutFinish(APIView):
@@ -125,4 +131,4 @@ class RunningWorkoutFinish(APIView):
             else:
                 return HttpResponseBadRequest()
         else:
-            return HttpResponseBadRequest()
+            return HttpResponseForbidden()
