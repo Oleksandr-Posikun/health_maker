@@ -25,50 +25,54 @@ class MainMenu:
         }]
 
     def register_handlers(self):
-        self.dp.register_message_handler(self.start, commands=["start"], state='*')
+        self.dp.register_callback_query_handler(self.new_start, state=None)
+        self.dp.register_message_handler(self.new_start, state=None)
+        self.dp.register_message_handler(self.main_menu, commands=["menu"], state='*')
         self.dp.register_message_handler(self.help, lambda msg: msg.text.lower() == '/help',
                                          state=self.fsm_menu.get_class_variables() +
-                                                self.fsm_running.get_class_variables())
+                                               self.fsm_running.get_class_variables())
         self.dp.register_callback_query_handler(self.choice_menu, lambda c: c.data, state=self.fsm_menu.main_menu)
 
-    async def start(self, message: types.Message, state: FSMContext = None):
-        main_menu = await self.keyboard.create_reply_button('help', 'start')
-        user_state = await state.get_state()
+    async def new_start(self, message: types.Message):
+        telegram_id = str(message.from_user.id)
+        user_name = str(message.from_user.username)
+        user_first_name = str(message.from_user.first_name)
+        token = self.security_https.generate_token(telegram_id, user_name, user_first_name)
 
-        if user_state is None:
-            telegram_id = str(message.from_user.id)
-            user_name = str(message.from_user.username)
-            user_first_name = str(message.from_user.first_name)
-            token = self.security_https.generate_token(telegram_id, user_name, user_first_name)
+        result = await self.server_request.get_user_info(token, telegram_id, user_name, user_first_name)
 
-            result = await self.server_request.get_user_info(token, telegram_id, user_name, user_first_name)
+        if result['data_state']['state'] == 'newbie':
+            inline = await self.keyboard.create_inline_button({'text': 'Так', 'callback_data': 'yes'},
+                                                              {'text': 'Ні', 'callback_data': 'no'},
+                                                              row_width=2)
 
-            if result['data_state']['state'] == 'experienced':
-                await message.answer(f"Вітаю {user_first_name}. Було перезавантаження серверу, введіть команду ще раз!")
-                inline_keyboard = await self.keyboard.create_inline_button(
-                    {'text': 'RunningWorkouts', 'callback_data': 'run'},
-                    row_width=2)
-
-                await message.answer("Головне меню", reply_markup=main_menu)
-                await message.answer("Обери тип заняття", reply_markup=inline_keyboard)
-            elif result['data_state']['state'] == 'newbie':
-                inline = await self.keyboard.create_inline_button({'text': 'Так', 'callback_data': 'yes'},
-                                                                  {'text': 'Ні', 'callback_data': 'no'},
-                                                                  row_width=2)
-                await message.answer(f"Вітаю {user_first_name}. Бажаєш подивитися що я вмію?", reply_markup=inline)
+            await self.bot.send_message(message.from_user.id,
+                                        f"Вітаю {user_first_name}. Бажаєш подивитися що я вмію?", reply_markup=inline)
         else:
-            pass
+            await self.bot.send_message(message.from_user.id,
+                                        f"Вітаю {user_first_name}. "
+                                        f"Було перезавантаження серверу, оберіть команду ще раз")
+            await self.main_menu(message)
+
+    async def main_menu(self, message: types.Message):
+        main_menu = await self.keyboard.create_reply_button('help', 'start')
+
+        inline_keyboard = await self.keyboard.create_inline_button(
+            {'text': 'RunningWorkouts', 'callback_data': 'run'},
+            row_width=2)
+
+        await self.bot.send_message(message.from_user.id, "Головне меню", reply_markup=main_menu)
+        await self.bot.send_message(message.from_user.id, "Обери тип заняття", reply_markup=inline_keyboard)
 
         await self.fsm_menu.main_menu.set()
 
     async def help(self, message: types.Message):
         await self.fsm_menu.main_menu.set()
-        markup = types.ReplyKeyboardMarkup()
-        markup.add(types.KeyboardButton('open',
-                                        web_app=WebAppInfo(url='https://github.com/btholt/four-semesters-of-cs/blob'
-                                                               '/fa61de3cc80e0030bb172ecd75c7cb4ca3aeeadf/index.html')))
-        await self.bot.send_message(chat_id=message.from_user.id, text="Цей розділ поки ще в розробці",
-                                    reply_markup=markup)
+        # markup = types.ReplyKeyboardMarkup()
+        # markup.add(types.KeyboardButton('open',
+        #                                 web_app=WebAppInfo(url='https://github.com/btholt/four-semesters-of-cs/blob'
+        #                                                        '/fa61de3cc80e0030bb172ecd75c7cb4ca3aeeadf/index.html')))
+        await self.bot.send_message(chat_id=message.from_user.id, text="Цей розділ поки ще в розробці")
 
     async def choice_menu(self, callback: types.CallbackQuery):
         for i in self.menu:
