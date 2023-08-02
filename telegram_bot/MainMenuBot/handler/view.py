@@ -39,9 +39,14 @@ class MainMenu:
         telegram_id = str(message.from_user.id)
         user_name = str(message.from_user.username)
         user_first_name = str(message.from_user.first_name)
-        token = self.security_https.generate_token(telegram_id, user_name, user_first_name)
+        token = self.security_https.generate_token(telegram_id, user_name)
         
-        result = await self.server_request.get_user_info(token, telegram_id, user_name, user_first_name)
+        result = await self.server_request.post_user_info('check_user',
+                                                          token,
+                                                          telegram_id,
+                                                          user_name)
+
+        print(result)
 
         if result['data_state']['state'] == 'newbie':
             inline = await self.keyboard.create_inline_button({'text': 'Так', 'callback_data': 'yes'},

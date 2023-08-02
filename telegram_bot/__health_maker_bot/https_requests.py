@@ -42,8 +42,12 @@ class HttpsRequestsServer:
 
                 return response
 
-    async def get_user_info(self, token, telegram_id, user_name, user_first_name):
-        response = await self._get_request(token, telegram_id, user_name, user_first_name)
+    async def post_user_info(self, url, token, telegram_id, user_name):
+        response = await self._post_request(url,  User_Agent='TelegramBot',
+                                            Authorization=token,
+                                            user=telegram_id,
+                                            user_name=user_name,
+                                            json=True)
 
         return response
 
