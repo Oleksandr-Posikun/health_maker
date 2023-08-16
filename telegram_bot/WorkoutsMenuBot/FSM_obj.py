@@ -1,8 +1,8 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
-class MainMenuState(StatesGroup):
-    main_menu = State()
+class WorkoutsMenuState(StatesGroup):
+    run_workout = State()
 
     @classmethod
     def get_class_variables(cls):
