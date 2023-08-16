@@ -1,6 +1,4 @@
-from datetime import datetime
 from aiogram import types
-
 from MainMenuBot.FSM_obj import MainMenuState
 from MainMenuBot.keyboards_maker import KeyboardsMaker
 from RunningWorkoutsBot.FSM_obj import RunningState
