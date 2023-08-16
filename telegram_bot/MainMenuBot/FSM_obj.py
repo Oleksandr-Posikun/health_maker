@@ -3,8 +3,6 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 class MainMenuState(StatesGroup):
     main_menu = State()
-    workout_menu = State()
-    food_menu = State()
 
     @classmethod
     def get_class_variables(cls):

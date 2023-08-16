@@ -21,7 +21,7 @@ class ChatInteraction:
                 break
 
     async def callback_delete_message_index(self, callback, index):
-        await self.bot.delete_message(callback.message.chat.id, index)
+        await self.bot.delete_message(callback.message.chat.id, callback.message.message_id-index)
 
     async def delete_message_index(self, message, index):
-        await self.bot.delete_message(message.chat.id, index)
+        await self.bot.delete_message(message.chat.id, message.message_id-index)

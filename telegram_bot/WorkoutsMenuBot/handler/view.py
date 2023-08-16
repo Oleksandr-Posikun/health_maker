@@ -25,18 +25,14 @@ class WorkoutMenu(MenuInterface):
         }]
 
     def register_handlers(self):
-        self.dp.register_callback_query_handler(self.menu, lambda c: c.data, state=self.fsm_main_menu.workout_menu)
         self.dp.register_callback_query_handler(self.choice_done, lambda c: c.data,
                                                 state=self.fsm_workouts_menu.run_workout)
 
     async def menu(self, callback: types.CallbackQuery):
-        main_menu = await self.keyboard.create_reply_button('🆘 help')
-
         inline_keyboard = await self.keyboard.create_inline_button(
             {'text': 'RunningWorkouts', 'callback_data': 'run'},
             row_width=2)
 
-        await self.bot.send_message(callback.message.chat.id, "Тренування", reply_markup=main_menu)
         await self.bot.send_message(callback.message.chat.id, "Обери тип заняття", reply_markup=inline_keyboard)
 
         await self.fsm_workouts_menu.run_workout.set()
@@ -50,5 +46,5 @@ class WorkoutMenu(MenuInterface):
                 await self.bot.answer_callback_query(callback.id,
                                                      text=i['message'],
                                                      show_alert=True)
-                # await self.chat_interaction.callback_clear_chat_memory(callback)
+
                 await i['fsm'].set()

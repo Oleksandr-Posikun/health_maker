@@ -3,6 +3,7 @@ from MainMenuBot.FSM_obj import MainMenuState
 from MainMenuBot.keyboards_maker import KeyboardsMaker
 from RunningWorkoutsBot.FSM_obj import RunningState
 from RunningWorkoutsBot.location_processing import LocationProcessing
+from __health_maker_bot.chat_interaction import ChatInteraction
 
 
 class RunningWorkouts:
@@ -12,6 +13,7 @@ class RunningWorkouts:
         self.fsm_running = RunningState()
         self.keyboard = KeyboardsMaker()
         self.location_processing = LocationProcessing()
+        self.chat_interaction = ChatInteraction(main_bot, main_dp)
 
     def register_handlers(self):
         self.dp.register_message_handler(self.start_handle_location,
@@ -24,6 +26,7 @@ class RunningWorkouts:
                                                 state=self.fsm_running.moving)
 
     async def start_handle_location(self, message: types.Message):
+        await self.chat_interaction.delete_message_index(message, 1)
         await self.location_processing.request_coordinates(message, 'start_running_workouts')
 
         inline_keyboard = await self.keyboard.create_inline_button({'text': 'Фініш', 'callback_data': 'finish'})
@@ -36,6 +39,7 @@ class RunningWorkouts:
         await self.location_processing.request_coordinates(message, 'running_workouts_lasts')
 
     async def finish_handle_location(self, callback_query: types.CallbackQuery):
+        inline_keyboard = await self.keyboard.create_inline_button({'text': "Головне меню", 'callback_data': 'menu'})
         result = await self.location_processing.requests_finish_location(callback_query, 'running_workouts_finish')
         time_seconds = float(result['time'])
 
@@ -43,11 +47,12 @@ class RunningWorkouts:
         minutes = int((time_seconds % 3600) // 60)
         seconds = int(time_seconds % 60)
         milliseconds = int((time_seconds % 1) * 1000)
-
+        await self.chat_interaction.callback_clear_chat_memory(callback_query)
         await self.bot.send_message(callback_query.message.chat.id,
                                     f"Відстань : {round(result['distance'], 2)} м \n"
                                     f"Час {hours:02}:{minutes:02}:{seconds:02}:{milliseconds:03} \n"
                                     f"Ваша швидкість {round(result['speed']['speed'], 2)} м/с ->"
-                                    f"{round(result['speed']['converted speed'], 2)} км/г")
+                                    f"{round(result['speed']['converted speed'], 2)} км/г",
+                                    reply_markup=inline_keyboard)
 
         await MainMenuState.main_menu.set()

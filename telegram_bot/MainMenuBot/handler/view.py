@@ -24,16 +24,12 @@ class MainMenu(MenuInterface):
         self.server_request = HttpsRequestsServer()
         self.workout_menu = WorkoutMenu(main_bot, main_dp)
         self.menu_list = [{
-            'name': 'WorkoutsMenu',
-            'message': 'меню спорту',
-            'command': 'workouts',
-            'fsm': self.fsm_main_menu.workout_menu
+            'action': self.workout_menu.menu,
+            'command': 'workouts'
         },
             {
-                'name': 'FoodMenu',
-                'message': 'меню їжи',
-                'command': 'food',
-                'fsm': self.fsm_main_menu.food_menu
+                'action': self.workout_menu.menu,
+                'command': 'food'
             }
         ]
 
@@ -91,26 +87,21 @@ class MainMenu(MenuInterface):
             row_width=2)
 
         if isinstance(message, types.CallbackQuery):
+            await self.chat_interaction.callback_clear_chat_memory(message)
             await self.bot.send_message(message.message.chat.id, "Оберіть меню:",
                                         reply_markup=inline_keyboard)
 
         if isinstance(message, types.Message):
-            await self.bot.send_message(message.chat.id, "Оберіть меню:", reply_markup=inline_keyboard)
+            await self.chat_interaction.clear_chat_memory(message)
+            await self.bot.send_message(message.chat.id, "Головне меню", reply_markup=inline_keyboard)
 
         await self.fsm_main_menu.main_menu.set()
 
     async def choice(self, callback: types.CallbackQuery, menu_list):
-        inline = await self.keyboard.create_inline_button({'text': 'Так', 'callback_data': 'yes'},
-                                                          {'text': 'Ні', 'callback_data': 'no'},
-                                                          row_width=2)
         for i in menu_list:
             if callback.data == i['command']:
-                await self.bot.edit_message_text(chat_id=callback.message.chat.id,
-                                                 message_id=callback.message.message_id,
-                                                 text=i['message'],
-                                                 reply_markup=inline)
-
-                await i['fsm'].set()
+                await self.chat_interaction.callback_clear_chat_memory(callback)
+                await i['action'](callback)
 
     async def choice_done(self, callback: types.CallbackQuery):
         await self.choice(callback, self.menu_list)
