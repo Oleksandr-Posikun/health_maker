@@ -12,3 +12,16 @@ class ChatInteraction:
                 await self.bot.delete_message(message.chat.id, message.message_id - i)
             except MessageToDeleteNotFound:
                 break
+
+    async def callback_clear_chat_memory(self, callback):
+        for i in range(callback.message.message_id - callback.message.message_id, callback.message.message_id):
+            try:
+                await self.bot.delete_message(callback.message.chat.id, callback.message.message_id - i)
+            except MessageToDeleteNotFound:
+                break
+
+    async def callback_delete_message_index(self, callback, index):
+        await self.bot.delete_message(callback.message.chat.id, index)
+
+    async def delete_message_index(self, message, index):
+        await self.bot.delete_message(message.chat.id, index)

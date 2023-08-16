@@ -27,7 +27,7 @@ class MainMenu(MenuInterface):
             'name': 'WorkoutsMenu',
             'message': 'меню спорту',
             'command': 'workouts',
-            'fsm': self.fsm_main_menu.workout_menu,
+            'fsm': self.fsm_main_menu.workout_menu
         },
             {
                 'name': 'FoodMenu',
@@ -46,15 +46,6 @@ class MainMenu(MenuInterface):
                                                self.fsm_running.get_class_variables())
         self.dp.register_callback_query_handler(self.choice_done, lambda c: c.data, state=self.fsm_main_menu.main_menu)
 
-    async def choice(self, callback: types.CallbackQuery, menu_list):
-        for i in menu_list:
-            if callback.data == i['command']:
-                await self.bot.edit_message_text(chat_id=callback.message.chat.id,
-                                                 message_id=callback.message.message_id-2,
-                                                 text=i['message'])
-
-                await i['fsm'].set()
-
     async def new_start(self, message: types.Message):
         telegram_id = str(message.from_user.id)
         user_name = str(message.from_user.username)
@@ -71,12 +62,18 @@ class MainMenu(MenuInterface):
                                                               {'text': 'Ні', 'callback_data': 'no'},
                                                               row_width=2)
 
-            await self.bot.send_message(message.from_user.id,
-                                        f"Вітаю {user_first_name}. Бажаєш подивитися що я вмію?", reply_markup=inline)
-        else:
             await self.bot.send_message(message.chat.id,
-                                        f"Вітаю {user_first_name}. "
-                                        f"Було перезавантаження серверу, оберіть команду ще раз")
+                                        f"Вітаю {user_first_name}. Бажаєш подивитися що я вмію?",
+                                        reply_markup=inline)
+        else:
+            if isinstance(message, types.CallbackQuery):
+                await self.bot.send_message(message.message.chat.id,
+                                            f"Вітаю {user_first_name}. "
+                                            f"Було перезавантаження серверу, оберіть команду ще раз")
+            elif isinstance(message, types.Message):
+                await self.bot.send_message(message.chat.id,
+                                            f"Вітаю {user_first_name}. "
+                                            f"Було перезавантаження серверу, оберіть команду ще раз")
 
             await self.menu(message)
 
@@ -87,23 +84,33 @@ class MainMenu(MenuInterface):
         #                                 web_app=WebAppInfo(url='')))
         await self.bot.send_message(chat_id=message.from_user.id, text="Цей розділ поки ще в розробці")
 
-    async def menu(self, callback):
-        main_menu = await self.keyboard.create_reply_button('🆘 help')
-
+    async def menu(self, message):
         inline_keyboard = await self.keyboard.create_inline_button(
             {'text': 'Тренування', 'callback_data': 'workouts'},
             {'text': 'Харчування', 'callback_data': 'food'},
             row_width=2)
 
-        if isinstance(callback, types.CallbackQuery):
-            await self.bot.send_message(callback.message.chat.id, "Головне меню", reply_markup=main_menu)
-            await self.bot.send_message(callback.message.chat.id, "Обери тип заняття", reply_markup=inline_keyboard)
+        if isinstance(message, types.CallbackQuery):
+            await self.bot.send_message(message.message.chat.id, "Оберіть меню:",
+                                        reply_markup=inline_keyboard)
 
-        if isinstance(callback, types.Message):
-            await self.bot.send_message(callback.chat.id, "Головне меню", reply_markup=main_menu)
-            await self.bot.send_message(callback.chat.id, "Обери тип заняття", reply_markup=inline_keyboard)
+        if isinstance(message, types.Message):
+            await self.bot.send_message(message.chat.id, "Оберіть меню:", reply_markup=inline_keyboard)
 
-        await self.fsm_main_menu.workout_menu.set()
+        await self.fsm_main_menu.main_menu.set()
+
+    async def choice(self, callback: types.CallbackQuery, menu_list):
+        inline = await self.keyboard.create_inline_button({'text': 'Так', 'callback_data': 'yes'},
+                                                          {'text': 'Ні', 'callback_data': 'no'},
+                                                          row_width=2)
+        for i in menu_list:
+            if callback.data == i['command']:
+                await self.bot.edit_message_text(chat_id=callback.message.chat.id,
+                                                 message_id=callback.message.message_id,
+                                                 text=i['message'],
+                                                 reply_markup=inline)
+
+                await i['fsm'].set()
 
     async def choice_done(self, callback: types.CallbackQuery):
         await self.choice(callback, self.menu_list)

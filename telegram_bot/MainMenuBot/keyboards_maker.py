@@ -14,8 +14,11 @@ class KeyboardsMaker:
         :rtype: InlineKeyboardMarkup
         """
         inline_keyboard = InlineKeyboardMarkup(row_width=row_width)
-        for button in buttons:
-            inline_keyboard.add(InlineKeyboardButton(text=button['text'], callback_data=button['callback_data']))
+        inline_buttons = [
+            InlineKeyboardButton(text=i['text'], callback_data=i['callback_data'])
+            for i in buttons
+        ]
+        inline_keyboard.add(*inline_buttons)
 
         return inline_keyboard
 

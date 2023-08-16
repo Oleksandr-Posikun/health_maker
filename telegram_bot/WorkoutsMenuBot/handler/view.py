@@ -5,6 +5,7 @@ from MainMenuBot.keyboards_maker import KeyboardsMaker
 from RunningWorkoutsBot.FSM_obj import RunningState
 from RunningWorkoutsBot.interface import MenuInterface
 from WorkoutsMenuBot.FSM_obj import WorkoutsMenuState
+from __health_maker_bot.chat_interaction import ChatInteraction
 
 
 class WorkoutMenu(MenuInterface):
@@ -15,7 +16,7 @@ class WorkoutMenu(MenuInterface):
         self.fsm_workouts_menu = WorkoutsMenuState()
         self.fsm_running = RunningState()
         self.keyboard = KeyboardsMaker()
-
+        self.chat_interaction = ChatInteraction(main_bot, main_dp)
         self.menu_list = [{
             'name': 'RunningWorkouts',
             'message': 'Вмикай геолокацию і починай бігти',
@@ -24,7 +25,7 @@ class WorkoutMenu(MenuInterface):
         }]
 
     def register_handlers(self):
-        self.dp.register_callback_query_handler(self.menu, state=self.fsm_main_menu.workout_menu)
+        self.dp.register_callback_query_handler(self.menu, lambda c: c.data, state=self.fsm_main_menu.workout_menu)
         self.dp.register_callback_query_handler(self.choice_done, lambda c: c.data,
                                                 state=self.fsm_workouts_menu.run_workout)
 
@@ -36,7 +37,7 @@ class WorkoutMenu(MenuInterface):
             row_width=2)
 
         await self.bot.send_message(callback.message.chat.id, "Тренування", reply_markup=main_menu)
-        await self.bot.send_message(callback.message.chat.id, "Обери тип заняття____", reply_markup=inline_keyboard)
+        await self.bot.send_message(callback.message.chat.id, "Обери тип заняття", reply_markup=inline_keyboard)
 
         await self.fsm_workouts_menu.run_workout.set()
 
@@ -49,5 +50,5 @@ class WorkoutMenu(MenuInterface):
                 await self.bot.answer_callback_query(callback.id,
                                                      text=i['message'],
                                                      show_alert=True)
-
+                # await self.chat_interaction.callback_clear_chat_memory(callback)
                 await i['fsm'].set()
